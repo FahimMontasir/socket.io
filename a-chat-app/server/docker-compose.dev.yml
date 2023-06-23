@@ -1,0 +1,23 @@
+version: "3.8"
+services:
+  mongo:
+    image: mongo
+    ports:
+      - 27017:27017
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=fahim
+      - MONGO_INITDB_ROOT_PASSWORD=fahimkhan
+    volumes:
+      - mongo-db:/data/db
+
+volumes:
+  mongo-db:
+# important command for docker:
+# 1. docker compose -f docker-compose.yaml up -d
+# 2. docker compose stop
+
+# for mongodb
+# 1. docker exec -it [mongo-c-name] /bin/sh
+# 2. mongo -u "fahim" -p "fahimkhan" //to connect mongo instance
+# 3. db //to see databases
+# cat filename //to see inside
