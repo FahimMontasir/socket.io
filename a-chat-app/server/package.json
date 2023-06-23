@@ -13,7 +13,7 @@
     "format:check": "prettier --ignore-path .prettierignore --check \"**/*.+(js|ts|json)\"",
     "format:lint": "yarn format:check && yarn lint:check",
     "husky:setup": "cd .. && cd .. && husky install 'a-chat-app/server'/.husky",
-    "husky:prepare": "npx husky add .husky/pre-commit 'yarn format:lint'"
+    "husky:prepare": "npx husky add .husky/pre-commit 'cd a-chat-app/server && yarn format:lint'"
   },
   "lint-staged": {
     "src/**/*.ts": "yarn format:lint"
