@@ -1,16 +1,22 @@
 import { Server } from 'socket.io';
-import { Server as IServer } from 'http';
-//routes
+import { Server as HttpServer } from 'http';
+import { instrument } from '@socket.io/admin-ui';
+//namespaces
 import { onMainNamespaceConnect } from './modules/socket/chat/chat.namespace';
+import { onLeaderBoardNspConnect } from './modules/socket/leaderboard/leaderboard.namespace';
 
-const registerServer = (server: IServer) => {
+const registerServer = (server: HttpServer) => {
   const io = new Server(server, {
     cors: {
       origin: '*',
       methods: ['GET', 'POST'],
     },
   });
-
+  // for admin ui view -> ui: https://admin.socket.io/
+  instrument(io, {
+    auth: false,
+    mode: 'development',
+  });
   // const totalConnectedUser = io.engine.clientsCount;
   // logger.info(`total socket io connected user: ${totalConnectedUser}`);
   //client side
@@ -34,8 +40,15 @@ const registerServer = (server: IServer) => {
   //     next(new Error('unknown user'));
   //   }
   // });
-
   io.on('connection', socket => onMainNamespaceConnect(io, socket));
+
+  // other namespaces
+  const leaderBoardNsp = io.of('/leader-board');
+  //middleware goose here
+  leaderBoardNsp.use((socket, next) => {
+    next();
+  });
+  leaderBoardNsp.on('connection', socket => onLeaderBoardNspConnect(leaderBoardNsp, socket));
 };
 
 export const SocketServer = {

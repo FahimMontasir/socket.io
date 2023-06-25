@@ -1,15 +1,17 @@
-import Image from "next/image";
+import { io } from "socket.io-client";
+import { MainNspEvents } from "@/interfaces/socket/mainNsp";
+import { LeaderBoardNspEvents } from "@/interfaces/socket/leaderboarNsp";
+
 // import { Inter } from "next/font/google";
 // const inter = Inter({ subsets: ["latin"] });
-import { io } from "socket.io-client";
 
 export default function Home() {
-  const socket = io("http://localhost:5000", {
+  const socket: MainNspEvents = io("http://localhost:5000", {
     auth: (cb) => {
       cb({ token: "abc-test-1234" });
     },
   });
-  console.log({ socket });
+  // console.log({ socket });
 
   socket.on("connect_error", () => {
     socket.connect();
@@ -31,7 +33,25 @@ export default function Home() {
   //   socket.emit("demo-route", "hi i am fahim");
   // }
 
-  socket.emit("demo-route", "hi i am fahim");
+  socket.emit("chatText", "hi");
+  socket.on("chatHistory", (history) => {
+    console.log({ history });
+  });
+  socket.emit("chatUser", { id: 1, name: "fahim" }, (message) => {
+    console.log({ message });
+  });
+
+  //other namespaces
+  const leaderBoardNsp: LeaderBoardNspEvents = io(
+    "http://localhost:5000/leader-board"
+  );
+  leaderBoardNsp.on("connect", () => {
+    console.log({ leaderBoardNsp: leaderBoardNsp.connected });
+  });
+  leaderBoardNsp.emit("upvote", 10);
+  leaderBoardNsp.on("leaderBoard", (history) => {
+    console.log({ leaderBoardNsp: history });
+  });
 
   return <h1>hi</h1>;
 }

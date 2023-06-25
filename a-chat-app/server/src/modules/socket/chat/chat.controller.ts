@@ -1,7 +1,7 @@
-const sendText = () => {
-  'abc';
+const chatText = (text: string) => {
+  console.log(text);
 };
 
 export const ChatController = {
-  sendText,
+  chatText,
 };
