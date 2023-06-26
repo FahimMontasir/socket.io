@@ -1,7 +1,14 @@
 import { Model } from 'mongoose';
-import { Server, Socket } from 'socket.io';
+import { Namespace, Socket } from 'socket.io';
+
+export type User = {
+  userID: string;
+  username: string;
+};
 
 type ServerToClientEvents = {
+  users: (users: User[]) => void;
+  userConnected: (user: User) => void;
   chatHistory: (history: { text: string; date: Date }[]) => void;
 };
 
@@ -15,17 +22,17 @@ type InterServerEvents = {
 };
 
 type SocketData = {
-  token: string;
+  username: string;
 };
 
-export type ChatServer = Server<
+export type MainServer = Namespace<
   ClientToServerEvents,
   ServerToClientEvents,
   InterServerEvents,
   SocketData
 >;
 
-export type ChatSocket = Socket<
+export type MainSocket = Socket<
   ClientToServerEvents,
   ServerToClientEvents,
   InterServerEvents,

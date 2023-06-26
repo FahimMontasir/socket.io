@@ -1,6 +1,13 @@
 import { Socket } from "socket.io-client";
 
+export type User = {
+  userID: string;
+  username: string;
+};
+
 type ServerToClientEvents = {
+  users: (users: User[]) => void;
+  userConnected: (user: User) => void;
   chatHistory: (history: { text: string; date: Date }[]) => void;
 };
 

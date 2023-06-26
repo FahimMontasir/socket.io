@@ -2,8 +2,9 @@ import { Server } from 'socket.io';
 import { Server as HttpServer } from 'http';
 import { instrument } from '@socket.io/admin-ui';
 //namespaces
-import { onMainNamespaceConnect } from './modules/socket/chat/chat.namespace';
+import { onMainNamespaceConnect } from './modules/socket/main/main.namespace';
 import { onLeaderBoardNspConnect } from './modules/socket/leaderboard/leaderboard.namespace';
+import { authUser } from './middlewares/socket/authUser';
 
 const registerServer = (server: HttpServer) => {
   const io = new Server(server, {
@@ -17,6 +18,12 @@ const registerServer = (server: HttpServer) => {
     auth: false,
     mode: 'development',
   });
+
+  // ----------main nsp------------
+  const mainNsp = io.of('/');
+  // middleware of main nsp
+  mainNsp.use(authUser);
+
   // const totalConnectedUser = io.engine.clientsCount;
   // logger.info(`total socket io connected user: ${totalConnectedUser}`);
   //client side
@@ -40,9 +47,9 @@ const registerServer = (server: HttpServer) => {
   //     next(new Error('unknown user'));
   //   }
   // });
-  io.on('connection', socket => onMainNamespaceConnect(io, socket));
+  mainNsp.on('connection', socket => onMainNamespaceConnect(mainNsp, socket));
 
-  // other namespaces
+  // ----------other namespaces-----------
   const leaderBoardNsp = io.of('/leader-board');
   //middleware goose here
   leaderBoardNsp.use((socket, next) => {
