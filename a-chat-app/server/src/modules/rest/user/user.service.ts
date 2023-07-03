@@ -1,68 +1,82 @@
-import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+import jwt, { Secret } from 'jsonwebtoken';
 import ApiError from '../../../errors/ApiError';
-import { IUser } from './user.interface';
+import { ICreatedUser, IUser } from './user.interface';
 import { User } from './user.model';
-import { UserUtil } from './user.util';
 import configs from '../../../configs';
 
-const createStudent = async (student: any, user: IUser): Promise<IUser | null> => {
-  //default pass
-  if (!user.password) {
-    user.password = configs.env as string;
+const register = async (body: IUser): Promise<ICreatedUser | null> => {
+  const { username, mail, password } = body;
+  // check if user exists
+  const userExists = await User.exists({ mail: mail.toLowerCase() });
+  if (userExists) {
+    throw new ApiError(400, 'This Email is already in use.');
   }
 
-  //set role
-  user.role = 'student';
+  // encrypt password
+  const encryptedPassword = await bcrypt.hash(password, 10);
 
-  const academicSemester = await User.findById(student.academicSemester);
+  // create user document and save in database
+  const user = await User.create({
+    username,
+    mail: mail.toLowerCase(),
+    password: encryptedPassword,
+  });
 
-  let newUserAllData;
-  const session = await mongoose.startSession();
-  try {
-    session.startTransaction();
-    // generate student id
-    const id = await UserUtil.generateStudentID(academicSemester);
-    user.id = id;
-    student.id = id;
-
-    const createdStudent = await User.create([student], [session]);
-
-    if (!createdStudent.length) {
-      throw new ApiError(400, 'Failed to create student');
+  // create JWT token
+  const token = jwt.sign(
+    {
+      userId: user._id,
+      mail,
+    },
+    configs.token_key as Secret,
+    {
+      expiresIn: '24h',
     }
+  );
 
-    //set student -> _id into user.student
-    user.student = createdStudent[0]._id;
-    const newUser = await User.create([user], [session]);
+  return {
+    _id: user._id,
+    mail: user.mail,
+    username: user.username,
+    token: token,
+  };
+};
 
-    if (!newUser.length) {
-      throw new ApiError(400, 'Failed to create user');
+const login = async (body: IUser): Promise<ICreatedUser | null> => {
+  const { mail, password } = body;
+
+  const user = await User.findOne({ mail: mail.toLowerCase() });
+  if (!user) {
+    throw new ApiError(404, 'Your email is wrong!!!');
+  }
+
+  const isValidPassword = await bcrypt.compare(password, user.password);
+  if (!isValidPassword) {
+    throw new ApiError(404, 'Your password is wrong!!!');
+  }
+
+  // send new token
+  const token = jwt.sign(
+    {
+      userId: user._id,
+      mail,
+    },
+    configs.token_key as Secret,
+    {
+      expiresIn: '24h',
     }
-    newUserAllData = newUser[0];
+  );
 
-    await session.commitTransaction();
-    await session.endSession();
-  } catch (error) {
-    await session.abortTransaction();
-    await session.endSession();
-    throw error;
-  }
-
-  // user -> student -> academicSemester, academicDepartment, academicFaculty
-  if (newUserAllData) {
-    newUserAllData = await User.findOne({ id: newUserAllData.id }).populate({
-      path: 'student',
-      populate: [
-        { path: 'academicSemester' },
-        { path: 'academicDepartment' },
-        { path: 'academicFaculty' },
-      ],
-    });
-  }
-
-  return newUserAllData;
+  return {
+    _id: user._id,
+    mail: user.mail,
+    username: user.username,
+    token: token,
+  };
 };
 
 export const UserService = {
-  createStudent,
+  register,
+  login,
 };

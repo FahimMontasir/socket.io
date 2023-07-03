@@ -1,8 +1,19 @@
+import configs from '../../../configs';
+import { logger } from '../../../shared/logger';
 import { MainServer, MainSocket, User } from './main.interface';
 // import { MainController } from './main.controller';
 // import { ChatUser } from './chat.model';
 
 export const onMainNamespaceConnect = (io: MainServer, socket: MainSocket) => {
+  const isProd = configs.env === 'production';
+  if (!isProd) {
+    socket.use(([event, ...args], next) => {
+      // do something with the packet (logging, rate limiting etc...)
+      logger.info({ event, args });
+      next();
+    });
+  }
+
   const users: User[] = [];
   for (const [id, socket] of io.sockets) {
     users.push({
@@ -14,6 +25,13 @@ export const onMainNamespaceConnect = (io: MainServer, socket: MainSocket) => {
   socket.emit('users', users);
 
   socket.broadcast.emit('userConnected', { userID: socket.id, username: socket.data.username });
+
+  socket.on('privateMessage', ({ content, to }) => {
+    socket.to(to).emit('privateMessage', {
+      content,
+      from: socket.id,
+    });
+  });
 
   // // const totalConnect = io.engine.clientsCount;
   // socket.on('chatText', MainController.chatText);

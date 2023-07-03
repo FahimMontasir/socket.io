@@ -1,14 +1,15 @@
 import { Model, Types } from 'mongoose';
 
 export type IUser = {
-  id: string;
-  role: string;
+  mail: string;
+  username: string;
   password: string;
-  student?: Types.ObjectId;
-  faculty?: Types.ObjectId;
-  admin?: Types.ObjectId;
-  // faculty?: Types.ObjectId | IFaculty;
-  // admin?: Types.ObjectId | IAdmin;
+  friends?: Types.ObjectId[];
+};
+
+export type ICreatedUser = Partial<IUser> & {
+  token: string;
+  _id: Types.ObjectId;
 };
 
 export type IUserModel = Model<IUser, Record<string, unknown>>;

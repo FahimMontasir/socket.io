@@ -23,11 +23,15 @@
   "license": "ISC",
   "dependencies": {
     "@socket.io/admin-ui": "^0.5.1",
+    "@types/jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.0",
     "mongoose": "^7.3.0",
     "socket.io": "^4.7.0",
+    "uuid": "^9.0.0",
     "winston": "^3.9.0",
     "winston-daily-rotate-file": "^4.7.1",
     "zod": "^3.21.4"

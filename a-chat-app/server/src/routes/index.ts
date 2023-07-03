@@ -1,14 +1,24 @@
-import express from 'express';
+import express, { Router } from 'express';
 import { UserRoutes } from '../modules/rest/user/user.routes';
+import { FriendInvitationRoutes } from '../modules/rest/friendInvitation/friendInvitation.routes';
 
 const router = express.Router();
 
-// the routes of socket sever is inside socket.server.ts
+type IModuleRoutes = {
+  path: string;
+  route: Router;
+}[];
 
-const moduleRoutes = [
+// the routes/events of socket sever is inside socket.server.ts
+
+const moduleRoutes: IModuleRoutes = [
   {
-    path: '/users',
+    path: '/user',
     route: UserRoutes,
+  },
+  {
+    path: '/friend-invitation',
+    route: FriendInvitationRoutes,
   },
 ];
 
