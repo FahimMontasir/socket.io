@@ -2,10 +2,14 @@ import { mainNsp } from "@/socket";
 import { User } from "@/socket/interfaces/mainNsp";
 import { useEffect, useState } from "react";
 
+type LocalUser = User & {
+  messages?: { content: string; fromSelf: boolean }[];
+  hasNewMessages?: boolean;
+};
+
 export default function Login() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [chats, setChats] = useState([]);
+  const [users, setUsers] = useState<LocalUser[]>([]);
+  const [selectedUser, setSelectedUser] = useState<LocalUser | null>(null);
   const [message, setMessage] = useState("");
 
   const [username, setUsername] = useState("");
@@ -16,54 +20,102 @@ export default function Login() {
     mainNsp.auth = { username };
     mainNsp.connect();
   };
-  // console.log(mainNsp.connected, connected);
-
-  mainNsp.on("connect_error", (error) => {
-    console.log({ error: error });
-    setError(error.message);
-  });
-
-  mainNsp.on("connect", () => {
-    setConnected(true);
-    setError("");
-  });
-
-  mainNsp.on("users", (users) => {
-    setUsers(users);
-    console.log({ users });
-  });
-
-  mainNsp.on("userConnected", (user) => {
-    setUsers((prev) => {
-      if (prev.find((u) => u.userID === user.userID)) {
-        return prev;
-      } else {
-        return [...prev, user];
-      }
-    });
-  });
 
   const handleSendMessage = () => {
     if (message.trim() === "") {
       return;
     }
+    if (selectedUser?.userID) {
+      mainNsp.emit("privateMessage", {
+        content: message,
+        to: selectedUser.userID,
+      });
 
-    const newChat = {
-      user: selectedUser,
-      message: message.trim(),
-    };
-
-    // setChats((prevChats) => [...prevChats, newChat]);
+      setSelectedUser((prev: any) => {
+        if (prev?.messages?.length) {
+          return {
+            ...prev,
+            messages: [
+              ...prev?.messages,
+              {
+                content: message,
+                fromSelf: true,
+              },
+            ],
+          };
+        } else {
+          return {
+            ...prev,
+            messages: [
+              {
+                content: message,
+                fromSelf: true,
+              },
+            ],
+          };
+        }
+      });
+    }
     setMessage("");
   };
 
-  // it works in production build
-  //useEffect(() => {
-  //   if (connected) {
-  //     router.push("/home");
-  //     console.log("inside useeffect");
-  //   }
-  // }, [connected]);
+  // always call on event handlers inside use Effect otherwise it is called multiple times
+  useEffect(() => {
+    mainNsp.on("connect_error", (error) => {
+      console.log({ error: error });
+      setError(error.message);
+    });
+
+    mainNsp.on("connect", () => {
+      setConnected(true);
+      setError("");
+    });
+
+    mainNsp.on("users", (users) => {
+      setUsers(users);
+      console.log({ users });
+    });
+
+    mainNsp.on("userConnected", (user) => {
+      setUsers((prev) => [...prev, user]);
+    });
+
+    mainNsp.on("privateMessage", ({ content, from }) => {
+      setSelectedUser((prev: any) => {
+        if (prev?.messages?.length) {
+          return {
+            ...prev,
+            messages: [
+              ...prev?.messages,
+              {
+                content,
+                fromSelf: false,
+              },
+            ],
+          };
+        } else {
+          return {
+            ...prev,
+            messages: [
+              {
+                content,
+                fromSelf: false,
+              },
+            ],
+          };
+        }
+      });
+      console.log({ content, from });
+    });
+
+    return () => {
+      mainNsp.off("connect_error");
+      mainNsp.off("connect");
+      mainNsp.off("users");
+      mainNsp.off("userConnected");
+      mainNsp.off("privateMessage");
+    };
+  }, []);
   return (
     <div>
       {error && error}
@@ -101,11 +153,15 @@ export default function Login() {
             <div>
               {/* Chat Messages */}
               <div className="flex flex-col p-4 overflow-y-auto">
-                {chats.map((chat, index) => (
-                  <div key={index} className="mb-2">
-                    <span className="font-bold">{chat}:</span> {chat}
-                  </div>
-                ))}
+                {selectedUser?.messages?.length &&
+                  selectedUser?.messages.map((chat, index) => (
+                    <div key={index} className="mb-2">
+                      <span className="font-bold">
+                        {chat.fromSelf ? "yourself" : selectedUser.username}:
+                      </span>{" "}
+                      {chat.content}
+                    </div>
+                  ))}
               </div>
 
               {/* Chat Input */}
