@@ -10,7 +10,7 @@ type IModuleRoutes = {
 }[];
 
 // the routes/events of socket sever is inside socket.server.ts
-
+// route started with /api/v1
 const moduleRoutes: IModuleRoutes = [
   {
     path: '/user',

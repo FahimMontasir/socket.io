@@ -9,7 +9,7 @@
 
   "rules": {
     "@typescript-eslint/no-unused-vars": "error",
-    // "no-console": "error",
+    "no-console": "error",
     "no-undef": "error",
     "no-unused-expressions": "error",
     "no-unreachable": "error",

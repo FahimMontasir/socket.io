@@ -1,10 +1,16 @@
+import { Namespace, Socket } from 'socket.io';
 import configs from '../../../configs';
 import { logger } from '../../../shared/logger';
-import { MainServer, MainSocket, User } from './main.interface';
-// import { MainController } from './main.controller';
-// import { ChatUser } from './chat.model';
+import { userEvent } from './user/user.event';
+import { MainNspStore } from './main.store';
+import { UserSocketService } from './user/user.service';
+import { chatEvent } from './chat/chat.event';
+import { roomEvent } from './room/room.event';
 
-export const onMainNamespaceConnect = (io: MainServer, socket: MainSocket) => {
+export const onMainNamespaceConnect = (io: Namespace, socket: Socket) => {
+  MainNspStore.setSocketMainNspInstance(io);
+
+  // for debugging purpose
   const isProd = configs.env === 'production';
   if (!isProd) {
     socket.use(([event, ...args], next) => {
@@ -14,47 +20,14 @@ export const onMainNamespaceConnect = (io: MainServer, socket: MainSocket) => {
     });
   }
 
-  const users: User[] = [];
-  for (const [id, socket] of io.sockets) {
-    users.push({
-      userID: id,
-      username: socket.data.username,
-    });
-  }
-  console.log({ users });
-  socket.emit('users', users);
+  // ----------event registry---------
+  userEvent(io, socket);
+  chatEvent(io, socket);
+  roomEvent(io, socket);
+  //-----------------------------------
 
-  socket.broadcast.emit('userConnected', { userID: socket.id, username: socket.data.username });
-
-  socket.on('privateMessage', ({ content, to }) => {
-    socket.to(to).emit('privateMessage', {
-      content,
-      from: socket.id,
-    });
+  //when user leave from the website or app
+  socket.on('disconnect', () => {
+    UserSocketService.disconnectHandler(socket);
   });
-
-  // // const totalConnect = io.engine.clientsCount;
-  // socket.on('chatText', MainController.chatText);
-  // socket.emit('chatHistory', [{ text: 'hello', date: new Date() }]);
-  // // socket.on('demo-route', arg => {
-  // //   console.log({ arg });
-  // // });
-  // socket.on('chatUser', async (payload, callback) => {
-  //   if (typeof callback !== 'function') {
-  //     // not an acknowledgement
-  //     return socket.disconnect();
-  //   }
-  //   try {
-  //     // await ChatUser.create(payload);
-  //     // console.log({ createdUser });
-  //     callback('success');
-  //   } catch (error) {
-  //     // console.log({ error });
-  //     callback('error');
-  //   }
-  // });
-  // socket.join('room');
-  // // and then later
-  // io.to('room').emit('chatHistory', [{ text: 'acb', date: new Date() }]);
-  // io.in("room")
 };

@@ -1,5 +1,6 @@
 import ApiError from '../../../errors/ApiError';
 import { DecodedUser } from '../../../interfaces/user';
+import { FriendSocketService } from '../../socket/main/friend/friend.service';
 import { User } from '../user/user.model';
 import { IInvite } from './friendInvitation.interface';
 import { FriendInvitation } from './friendInvitation.model';
@@ -49,7 +50,7 @@ const invite = async (body: IInvite, decodedUser: DecodedUser): Promise<string |
 
   // if invitation has been successfully created we would like to update friends invitations if other user is online
   // send pending invitations update to specific user
-  // friendsUpdates.updateFriendsPendingInvitations(targetUser._id.toString());
+  await FriendSocketService.updateFriendsPendingInvitations(targetUser._id.toString());
 
   return 'Invitation has been sent';
 };
@@ -86,27 +87,38 @@ const accept = async (body: { id: string }): Promise<string | null> => {
     receiverUser.friends = [senderId];
   }
 
-  // todo: add mongoose transaction here
+  // // transaction
+  // // Transaction numbers are only allowed on a replica set member or mongos
+  // const session = await mongoose.startSession();
+  // try {
+  //   session.startTransaction();
+  //   await session.commitTransaction();
+  //   await session.endSession();
+  // } catch (error) {
+  //   await session.abortTransaction();
+  //   await session.endSession();
+  //   throw error;
+  // }
+
+  // save friends to user
   await senderUser.save();
   await receiverUser.save();
-
   // delete invitation
   await FriendInvitation.findByIdAndDelete(id);
 
   // update list of the friends if the users are online
-  // friendsUpdates.updateFriends(senderId.toString());
-  // friendsUpdates.updateFriends(receiverId.toString());
+  await FriendSocketService.updateFriends(senderId.toString());
+  await FriendSocketService.updateFriends(receiverId.toString());
 
   // update list of friends pending invitations
-  // friendsUpdates.updateFriendsPendingInvitations(receiverId.toString());
+  await FriendSocketService.updateFriendsPendingInvitations(receiverId.toString());
 
   return 'Friend successfully added';
 };
 
 const reject = async (body: { id: string }, decodedUser: DecodedUser): Promise<string | null> => {
   const { id } = body;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { userId } = decodedUser; // need for socket io
+  const { userId } = decodedUser;
 
   // remove that invitation from friend invitations collection
   const invitationExists = await FriendInvitation.exists({ _id: id });
@@ -117,7 +129,7 @@ const reject = async (body: { id: string }, decodedUser: DecodedUser): Promise<s
   await FriendInvitation.findByIdAndDelete(id);
 
   // update pending invitations socket
-  // friendsUpdates.updateFriendsPendingInvitations(userId);
+  await FriendSocketService.updateFriendsPendingInvitations(userId);
 
   return 'Invitation successfully rejected';
 };

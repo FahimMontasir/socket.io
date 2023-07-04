@@ -1,18 +1,19 @@
 import jwt, { Secret } from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 import configs from '../../configs';
+import ApiError from '../../errors/ApiError';
 import { DecodedUser } from '../../interfaces/user';
 
 // replace user with appropriate type
 export const verifyToken = (
-  req: Request & { user: DecodedUser },
+  req: Request & { user?: DecodedUser },
   res: Response,
   next: NextFunction
 ) => {
   let token: string = req.body.token || req.query.token || req.headers['authorization'];
 
   if (!token) {
-    return res.status(403).send('A token is required for authentication');
+    throw new ApiError(403, 'A token is required for authentication');
   }
 
   try {
@@ -20,7 +21,7 @@ export const verifyToken = (
     const decoded = jwt.verify(token, configs.token_key as Secret);
     req.user = decoded as DecodedUser;
   } catch (err) {
-    return res.status(401).send('Invalid Token');
+    throw new ApiError(401, 'Invalid Token');
   }
 
   return next();

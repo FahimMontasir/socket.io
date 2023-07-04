@@ -1,11 +1,12 @@
 import jwt, { Secret } from 'jsonwebtoken';
+import { Socket } from 'socket.io';
 import { ExtendedError } from 'socket.io/dist/namespace';
-import { MainSocket } from '../../modules/socket/main/main.interface';
+
 import configs from '../../configs';
 
 type Next = (err?: ExtendedError | undefined) => void;
 
-export const verifySocketToken = (socket: MainSocket, next: Next) => {
+export const verifySocketToken = (socket: Socket, next: Next) => {
   const token = socket.handshake.auth?.token;
 
   try {

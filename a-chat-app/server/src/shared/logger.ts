@@ -18,17 +18,7 @@ const isProduction = configs.env === 'production';
 const logger = createLogger({
   level: 'info',
   format: combine(format.colorize(), label({ label: 'CHAT' }), timestamp(), customFormat),
-  transports: [
-    isProduction
-      ? new DailyRotateFile({
-          filename: path.join(process.cwd(), 'logs', 'successes', 'vmp-%DATE%-success.log'),
-          datePattern: 'YYYY-DD-MM-HH',
-          zippedArchive: true,
-          maxSize: '20m',
-          maxFiles: '14d',
-        })
-      : new transports.Console(),
-  ],
+  transports: [new transports.Console()],
   exitOnError: false,
 });
 
