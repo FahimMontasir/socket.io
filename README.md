@@ -1,1 +1,1 @@
-# plan to make an world class chat app
+# Check `a-chat-app` folder.
