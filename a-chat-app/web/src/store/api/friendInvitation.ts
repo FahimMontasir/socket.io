@@ -22,7 +22,7 @@ const friendInvitationApi = mainApi.injectEndpoints({
     rejectInvitation: builder.mutation({
       query: (data) => ({
         url: "/friend-invitation/reject",
-        method: "PATCH",
+        method: "POST",
         body: data,
       }),
     }),
