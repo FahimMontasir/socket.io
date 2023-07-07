@@ -15,9 +15,7 @@ type ServerToClientEvents = {
 };
 
 type ClientToServerEvents = {
-  // privateMessage: (privateMessage: PrivateMessage) => void;
-  // chatText: (text: string) => void;
-  // chatUser: (payload: { id: number; name: string }, callback: (message: string) => void) => void;
+  //nothing
 };
 
 type InterServerEvents = {
